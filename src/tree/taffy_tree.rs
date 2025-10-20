@@ -1,4 +1,5 @@
 //! Contains [TaffyTree](crate::tree::TaffyTree): the default implementation of [LayoutTree](crate::tree::LayoutTree), and the error type for Taffy.
+#![allow(unsafe_code)]
 #[cfg(not(feature = "std"))]
 use slotmap::SecondaryMap;
 #[cfg(feature = "std")]
@@ -169,36 +170,47 @@ impl Default for TaffyTree {
 }
 
 /// Iterator that wraps a slice of nodes, lazily converting them to u64
-pub struct TaffyTreeChildIter<'a>(core::slice::Iter<'a, NodeId>);
-impl Iterator for TaffyTreeChildIter<'_> {
+pub struct TaffyTreeChildIter {
+    cur: *const NodeId,
+    end: *const NodeId,
+}
+
+impl TaffyTreeChildIter {
+    pub unsafe fn new(slice: &[NodeId]) -> Self {
+        let cur = slice.as_ptr();
+        let end = cur.add(slice.len());
+        Self { cur, end }
+    }
+}
+
+impl Iterator for TaffyTreeChildIter {
     type Item = NodeId;
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        self.0.next().copied()
+        let cur = self.cur;
+        if cur < self.end {
+            unsafe {
+                self.cur = self.cur.add(1);
+                return Some(*cur);
+            }
+        }
+        None
     }
 }
 
 // TraversePartialTree impl for TaffyTree
 impl<NodeContext> TraversePartialTree for TaffyTree<NodeContext> {
-    type ChildIter<'a>
-        = TaffyTreeChildIter<'a>
-    where
-        Self: 'a;
+    type ChildIter = TaffyTreeChildIter;
 
     #[inline(always)]
-    fn child_ids(&self, parent_node_id: NodeId) -> Self::ChildIter<'_> {
-        TaffyTreeChildIter(self.children[parent_node_id.into()].iter())
+    fn child_ids(&self, parent_node_id: NodeId) -> Self::ChildIter {
+        unsafe { TaffyTreeChildIter::new(&self.children[parent_node_id.into()]) }
     }
 
     #[inline(always)]
     fn child_count(&self, parent_node_id: NodeId) -> usize {
         self.children[parent_node_id.into()].len()
-    }
-
-    #[inline(always)]
-    fn get_child_id(&self, parent_node_id: NodeId, id: usize) -> NodeId {
-        self.children[parent_node_id.into()][id]
     }
 }
 
@@ -289,24 +301,16 @@ where
     MeasureFunction:
         FnMut(Size<Option<f32>>, Size<AvailableSpace>, NodeId, Option<&mut NodeContext>, &Style) -> Size<f32>,
 {
-    type ChildIter<'a>
-        = TaffyTreeChildIter<'a>
-    where
-        Self: 'a;
+    type ChildIter = TaffyTreeChildIter;
 
     #[inline(always)]
-    fn child_ids(&self, parent_node_id: NodeId) -> Self::ChildIter<'_> {
+    fn child_ids(&self, parent_node_id: NodeId) -> Self::ChildIter {
         self.taffy.child_ids(parent_node_id)
     }
 
     #[inline(always)]
     fn child_count(&self, parent_node_id: NodeId) -> usize {
         self.taffy.child_count(parent_node_id)
-    }
-
-    #[inline(always)]
-    fn get_child_id(&self, parent_node_id: NodeId, child_index: usize) -> NodeId {
-        self.taffy.get_child_id(parent_node_id, child_index)
     }
 }
 

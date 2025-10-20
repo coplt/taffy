@@ -249,9 +249,7 @@ fn compute_inner(tree: &mut impl LayoutBlockContainer, node_id: NodeId, inputs: 
         perform_absolute_layout_on_absolute_children(tree, &items, absolute_position_area, absolute_position_offset);
 
     // 5. Perform hidden layout on hidden children
-    let len = tree.child_count(node_id);
-    for order in 0..len {
-        let child = tree.get_child_id(node_id, order);
+    for (order, child) in tree.child_ids(node_id).enumerate() {
         if tree.get_block_child_style(child).box_generation_mode() == BoxGenerationMode::None {
             tree.set_unrounded_layout(child, &Layout::with_order(order as u32));
             tree.perform_child_layout(

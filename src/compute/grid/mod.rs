@@ -527,8 +527,7 @@ pub fn compute_grid_layout<Tree: LayoutGridContainer>(
 
     // Position hidden and absolutely positioned children
     let mut order = items.len() as u32;
-    (0..tree.child_count(node)).for_each(|index| {
-        let child = tree.get_child_id(node, index);
+    tree.child_ids(node).for_each(|child| {
         let child_style = tree.get_grid_child_style(child);
 
         // Position hidden child

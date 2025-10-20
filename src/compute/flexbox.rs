@@ -373,9 +373,7 @@ fn compute_preliminary(tree: &mut impl LayoutFlexboxContainer, node: NodeId, inp
     let absolute_content_size = perform_absolute_layout_on_absolute_children(tree, node, &constants);
 
     debug_log!("hidden_layout");
-    let len = tree.child_count(node);
-    for order in 0..len {
-        let child = tree.get_child_id(node, order);
+    for (order, child) in tree.child_ids(node).enumerate() {
         if tree.get_flexbox_child_style(child).box_generation_mode() == BoxGenerationMode::None {
             tree.set_unrounded_layout(child, &Layout::with_order(order as u32));
             tree.perform_child_layout(
@@ -2070,8 +2068,7 @@ fn perform_absolute_layout_on_absolute_children(
     #[cfg_attr(not(feature = "content_size"), allow(unused_mut))]
     let mut content_size = Size::ZERO;
 
-    for order in 0..tree.child_count(node) {
-        let child = tree.get_child_id(node, order);
+    for (order, child) in tree.child_ids(node).enumerate() {
         let child_style = tree.get_flexbox_child_style(child);
 
         // Skip items that are display:none or are not position:absolute

@@ -147,18 +147,13 @@ use crate::compute::grid::DetailedGridInfo;
 /// However, this trait does *not* require access to any node's other than a single container node's immediate children unless you also intend to implement `TraverseTree`.
 pub trait TraversePartialTree {
     /// Type representing an iterator of the children of a node
-    type ChildIter<'a>: Iterator<Item = NodeId>
-    where
-        Self: 'a;
+    type ChildIter: Iterator<Item = NodeId>;
 
     /// Get the list of children IDs for the given node
-    fn child_ids(&self, parent_node_id: NodeId) -> Self::ChildIter<'_>;
+    fn child_ids(&self, parent_node_id: NodeId) -> Self::ChildIter;
 
     /// Get the number of children for the given node
     fn child_count(&self, parent_node_id: NodeId) -> usize;
-
-    /// Get a specific child of a node, where the index represents the nth child
-    fn get_child_id(&self, parent_node_id: NodeId, child_index: usize) -> NodeId;
 }
 
 /// A marker trait which extends `TraversePartialTree`
