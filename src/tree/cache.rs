@@ -70,7 +70,7 @@ impl Cache {
     ///   - Slot 7: x-axis available space is MinContent and y-axis available space is MaxContent or Definite
     ///   - Slot 8: x-axis available space is MinContent and y-axis available space is MinContent
     #[inline]
-    fn compute_cache_slot(known_dimensions: Size<Option<f32>>, available_space: Size<AvailableSpace>) -> usize {
+    pub fn compute_cache_slot(known_dimensions: Size<Option<f32>>, available_space: Size<AvailableSpace>) -> usize {
         use AvailableSpace::{Definite, MaxContent, MinContent};
 
         let has_known_width = known_dimensions.width.is_some();

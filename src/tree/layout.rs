@@ -32,9 +32,9 @@ pub enum SizingMode {
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct CollapsibleMarginSet {
     /// The largest positive margin
-    positive: f32,
+    pub positive: f32,
     /// The smallest negative margin (with largest absolute value)
-    negative: f32,
+    pub negative: f32,
 }
 
 impl CollapsibleMarginSet {
