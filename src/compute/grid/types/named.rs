@@ -88,8 +88,8 @@ impl<S: CheapCloneStr> NamedLineResolver<S> {
                 // TODO: Investigate eliminating clones
                 areas.insert(StrHasher(area.name.clone()), area.clone());
 
-                area_column_count = area_column_count.max(area.column_end.max(1) - 1);
-                area_row_count = area_row_count.max(area.row_end.max(1) - 1);
+                area_column_count = std::cmp::max(area_column_count, area.column_end.max(1) - 1);
+                area_row_count =  std::cmp::max(area_row_count, area.row_end.max(1) - 1);
 
                 let col_start_name = S::from(format!("{}-start", area.name.as_ref()));
                 upsert_line_name_map(&mut column_lines, col_start_name, area.column_start);
