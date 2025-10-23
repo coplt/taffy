@@ -37,6 +37,8 @@ pub(crate) use self::grid::{NonNamedGridPlacement, OriginZeroGridPlacement};
 use crate::geometry::{Point, Rect, Size};
 use crate::style_helpers::TaffyAuto as _;
 use core::fmt::Debug;
+#[cfg(any(feature = "alloc", feature = "std"))]
+use core::hash::Hash;
 
 #[cfg(feature = "grid")]
 use crate::geometry::Line;
@@ -45,19 +47,28 @@ use crate::style_helpers;
 #[cfg(feature = "grid")]
 use crate::util::sys::GridTrackVec;
 
-use crate::sys::String;
-
 /// Trait that represents a cheaply clonable string. If you're unsure what to use here
 /// consider `Arc<str>` or `string_cache::Atom`.
 #[cfg(any(feature = "alloc", feature = "std"))]
-pub trait CheapCloneStr:
-    AsRef<str> + for<'a> From<&'a str> + From<String> + PartialEq + Eq + Clone + Default + Debug + 'static
-{
+pub trait CheapCloneStr: PartialEq + Eq + Clone + Default + Hash + Debug + 'static {
+    /// `<ident>-start`
+    fn with_start(&self) -> Self;
+    /// `<ident>-end`
+    fn with_end(&self) -> Self;
 }
+
 #[cfg(any(feature = "alloc", feature = "std"))]
-impl<T> CheapCloneStr for T where
-    T: AsRef<str> + for<'a> From<&'a str> + From<String> + PartialEq + Eq + Clone + Default + Debug + 'static
+impl<T> CheapCloneStr for T
+where
+    T: AsRef<str> + for<'a> From<&'a str> + From<String> + PartialEq + Eq + Clone + Default + Debug + Hash + 'static,
 {
+    fn with_start(&self) -> Self {
+        Self::from(format!("{}-start", self.as_ref()))
+    }
+
+    fn with_end(&self) -> Self {
+        Self::from(format!("{}-end", self.as_ref()))
+    }
 }
 
 /// Trait that represents a cheaply clonable string. If you're unsure what to use here

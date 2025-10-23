@@ -4,55 +4,23 @@ use crate::{
     CheapCloneStr, GenericGridTemplateComponent, GenericRepetition as _, GridAreaAxis, GridAreaEnd, GridContainerStyle,
     GridPlacement, GridTemplateArea, Line, NonNamedGridPlacement, RepetitionCount,
 };
-use core::{borrow::Borrow, cmp::Ordering, fmt::Debug};
+use core::fmt::Debug;
 
 use super::GridLine;
 // use alloc::fmt::format;
-use crate::sys::{format, single_value_vec, Map, Vec};
-
-/// Wrap an `AsRef<str>` type with a type which implements Hash by first
-/// deferring to the underlying `&str`'s implementation of Hash.
-#[derive(Debug, Clone)]
-pub(crate) struct StrHasher<T: CheapCloneStr>(pub T);
-impl<T: CheapCloneStr> PartialOrd for StrHasher<T> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-impl<T: CheapCloneStr> Ord for StrHasher<T> {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.0.as_ref().cmp(other.0.as_ref())
-    }
-}
-impl<T: CheapCloneStr> PartialEq for StrHasher<T> {
-    fn eq(&self, other: &Self) -> bool {
-        other.0.as_ref() == self.0.as_ref()
-    }
-}
-impl<T: CheapCloneStr> Eq for StrHasher<T> {}
-#[cfg(feature = "std")]
-impl<T: CheapCloneStr> std::hash::Hash for StrHasher<T> {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.0.as_ref().hash(state)
-    }
-}
-impl<T: CheapCloneStr> Borrow<str> for StrHasher<T> {
-    fn borrow(&self) -> &str {
-        self.0.as_ref()
-    }
-}
+use crate::sys::{single_value_vec, Map, Vec};
 
 /// Resolver that takes grid lines names and area names as input and can then be used to
 /// resolve line names of grid placement properties into line numbers.
 pub(crate) struct NamedLineResolver<S: CheapCloneStr> {
     /// Map of row line names to line numbers. Each line name may correspond to multiple lines
     /// so we store a `Vec`
-    row_lines: Map<StrHasher<S>, Vec<u16>>,
+    row_lines: Map<S, Vec<u16>>,
     /// Map of column line names to line numbers. Each line name may correspond to multiple lines
     /// so we store a `Vec`
-    column_lines: Map<StrHasher<S>, Vec<u16>>,
+    column_lines: Map<S, Vec<u16>>,
     /// Map of area names to area definitions (start and end lines numbers in each axis)
-    areas: Map<StrHasher<S>, GridTemplateArea<S>>,
+    areas: Map<S, GridTemplateArea<S>>,
     /// Number of columns implied by grid area definitions
     area_column_count: u16,
     /// Number of rows implied by grid area definitions
@@ -66,8 +34,8 @@ pub(crate) struct NamedLineResolver<S: CheapCloneStr> {
 }
 
 /// Utility function to create or update an entry in a line name map
-fn upsert_line_name_map<S: CheapCloneStr>(map: &mut Map<StrHasher<S>, Vec<u16>>, key: S, value: u16) {
-    map.entry(StrHasher(key)).and_modify(|lines| lines.push(value)).or_insert_with(|| single_value_vec(value));
+fn upsert_line_name_map<S: CheapCloneStr>(map: &mut Map<S, Vec<u16>>, key: S, value: u16) {
+    map.entry(key).and_modify(|lines| lines.push(value)).or_insert_with(|| single_value_vec(value));
 }
 
 impl<S: CheapCloneStr> NamedLineResolver<S> {
@@ -77,27 +45,27 @@ impl<S: CheapCloneStr> NamedLineResolver<S> {
         column_auto_repetitions: u16,
         row_auto_repetitions: u16,
     ) -> Self {
-        let mut areas: Map<StrHasher<S>, GridTemplateArea<_>> = Map::new();
-        let mut column_lines: Map<StrHasher<S>, Vec<u16>> = Map::new();
-        let mut row_lines: Map<StrHasher<S>, Vec<u16>> = Map::new();
+        let mut areas: Map<S, GridTemplateArea<_>> = Map::new();
+        let mut column_lines: Map<S, Vec<u16>> = Map::new();
+        let mut row_lines: Map<S, Vec<u16>> = Map::new();
 
         let mut area_column_count = 0;
         let mut area_row_count = 0;
         if let Some(area_iter) = style.grid_template_areas() {
             for area in area_iter.into_iter() {
                 // TODO: Investigate eliminating clones
-                areas.insert(StrHasher(area.name.clone()), area.clone());
+                areas.insert(area.name.clone(), area.clone());
 
                 area_column_count = std::cmp::max(area_column_count, area.column_end.max(1) - 1);
-                area_row_count =  std::cmp::max(area_row_count, area.row_end.max(1) - 1);
+                area_row_count = std::cmp::max(area_row_count, area.row_end.max(1) - 1);
 
-                let col_start_name = S::from(format!("{}-start", area.name.as_ref()));
+                let col_start_name = area.name.with_start();
                 upsert_line_name_map(&mut column_lines, col_start_name, area.column_start);
-                let col_end_name = S::from(format!("{}-end", area.name.as_ref()));
+                let col_end_name = area.name.with_end();
                 upsert_line_name_map(&mut column_lines, col_end_name, area.column_end);
-                let row_start_name = S::from(format!("{}-start", area.name.as_ref()));
+                let row_start_name = area.name.with_start();
                 upsert_line_name_map(&mut row_lines, row_start_name, area.row_start);
-                let row_end_name = S::from(format!("{}-end", area.name.as_ref()));
+                let row_end_name = area.name.with_end();
                 upsert_line_name_map(&mut row_lines, row_end_name, area.row_end);
             }
         }
@@ -111,7 +79,7 @@ impl<S: CheapCloneStr> NamedLineResolver<S> {
                     current_line += 1;
                     for line_name in line_names.into_iter() {
                         column_lines
-                            .entry(StrHasher(line_name.clone()))
+                            .entry(line_name.clone())
                             .and_modify(|lines: &mut Vec<u16>| lines.push(current_line))
                             .or_insert_with(|| single_value_vec(current_line));
                     }
@@ -151,7 +119,7 @@ impl<S: CheapCloneStr> NamedLineResolver<S> {
                     current_line += 1;
                     for line_name in line_names.into_iter() {
                         row_lines
-                            .entry(StrHasher(line_name.clone()))
+                            .entry(line_name.clone())
                             .and_modify(|lines: &mut Vec<u16>| lines.push(current_line))
                             .or_insert_with(|| single_value_vec(current_line));
                     }
@@ -299,7 +267,6 @@ impl<S: CheapCloneStr> NamedLineResolver<S> {
         end: GridAreaEnd,
         filter_lines: &dyn Fn(&[u16]) -> &[u16],
     ) -> GridLine {
-        let name = name.as_ref();
         let mut idx = idx;
         let explicit_track_count = match axis {
             GridAreaAxis::Row => self.explicit_row_count as i16,
@@ -341,15 +308,15 @@ impl<S: CheapCloneStr> NamedLineResolver<S> {
             // TODO: eliminate string allocations
             match end {
                 GridAreaEnd::Start => {
-                    let implicit_name = format!("{name}-start");
-                    if let Some(lines) = line_lookup.get(&*implicit_name) {
+                    let implicit_name = name.clone().with_start();
+                    if let Some(lines) = line_lookup.get(&implicit_name) {
                         // println!("IMPLICIT COL {implicit_name}");
                         return GridLine::from(get_line(filter_lines(lines), explicit_track_count, idx));
                     }
                 }
                 GridAreaEnd::End => {
-                    let implicit_name = format!("{name}-end");
-                    if let Some(lines) = line_lookup.get(&*implicit_name) {
+                    let implicit_name = name.clone().with_end();
+                    if let Some(lines) = line_lookup.get(&implicit_name) {
                         // println!("IMPLICIT ROW {implicit_name}");
                         return GridLine::from(get_line(filter_lines(lines), explicit_track_count, idx));
                     }
@@ -396,18 +363,14 @@ impl<S: CheapCloneStr> Debug for NamedLineResolver<S> {
         for area in self.areas.values() {
             writeln!(
                 f,
-                "{}: row:{}/{} col: {}/{}",
-                area.name.as_ref(),
-                area.row_start,
-                area.row_end,
-                area.column_start,
-                area.column_end
+                "{:?}: row:{}/{} col: {}/{}",
+                area.name, area.row_start, area.row_end, area.column_start, area.column_end
             )?;
         }
 
         writeln!(f, "Grid Rows:")?;
         for (name, lines) in self.row_lines.iter() {
-            write!(f, "{}: ", name.0.as_ref())?;
+            write!(f, "{:?}: ", name)?;
             for line in lines {
                 write!(f, "{line}  ")?;
             }
@@ -416,7 +379,7 @@ impl<S: CheapCloneStr> Debug for NamedLineResolver<S> {
 
         writeln!(f, "Grid Columns:")?;
         for (name, lines) in self.column_lines.iter() {
-            write!(f, "{}: ", name.0.as_ref())?;
+            write!(f, "{:?}: ", name)?;
             for line in lines {
                 write!(f, "{line}  ")?;
             }

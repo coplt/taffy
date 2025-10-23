@@ -25,7 +25,7 @@ mod std {
     // }
     // pub(crate) use format;
 
-    pub(crate) use std::format;
+    // pub(crate) use std::format;
 
     /// A string
     pub(crate) type String = std::string::String;
