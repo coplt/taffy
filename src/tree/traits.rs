@@ -231,6 +231,10 @@ pub trait RoundTree: TraverseTree {
     fn get_unrounded_layout(&self, node_id: NodeId) -> Layout;
     /// Get a reference to the node's final layout
     fn set_final_layout(&mut self, node_id: NodeId, layout: &Layout);
+    /// return false to skip round
+    fn should_round(&self, _node_id: NodeId) -> bool {
+        return true;
+    }
 }
 
 /// Trait used by the `print_tree` method which prints a debug representation
