@@ -84,7 +84,7 @@ impl AbstractAxis {
 /// Container that holds an item in each absolute axis without specifying
 /// what kind of item it is.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) struct InBothAbsAxis<T> {
+pub struct InBothAbsAxis<T> {
     /// The item in the horizontal axis
     pub horizontal: T,
     /// The item in the vertical axis
@@ -146,7 +146,7 @@ impl<T> Rect<T> {
     /// as the second parameter of `f`.
     /// When applied to the top or bottom sides, the height is used instead.
     #[cfg(any(feature = "flexbox", feature = "block_layout"))]
-    pub(crate) fn zip_size<R, F, U>(self, size: Size<U>, f: F) -> Rect<R>
+    pub fn zip_size<R, F, U>(self, size: Size<U>, f: F) -> Rect<R>
     where
         F: Fn(T, U) -> R,
         U: Copy,
@@ -190,7 +190,7 @@ where
     ///
     /// **NOTE:** this is *not* the width of the rectangle.
     #[inline(always)]
-    pub(crate) fn horizontal_axis_sum(&self) -> U {
+    pub fn horizontal_axis_sum(&self) -> U {
         self.left + self.right
     }
 
@@ -200,7 +200,7 @@ where
     ///
     /// **NOTE:** this is *not* the height of the rectangle.
     #[inline(always)]
-    pub(crate) fn vertical_axis_sum(&self) -> U {
+    pub fn vertical_axis_sum(&self) -> U {
         self.top + self.bottom
     }
 
@@ -209,7 +209,7 @@ where
     /// **NOTE:** this is *not* the width/height of the rectangle.
     #[inline(always)]
     #[allow(dead_code)] // Fixes spurious clippy warning: this function is used!
-    pub(crate) fn sum_axes(&self) -> Size<U> {
+    pub fn sum_axes(&self) -> Size<U> {
         Size { width: self.horizontal_axis_sum(), height: self.vertical_axis_sum() }
     }
 
@@ -220,7 +220,7 @@ where
     /// If the [`FlexDirection`] is [`FlexDirection::Row`] or [`FlexDirection::RowReverse`], this is [`Rect::horizontal`].
     /// Otherwise, this is [`Rect::vertical`].
     #[cfg(feature = "flexbox")]
-    pub(crate) fn main_axis_sum(&self, direction: FlexDirection) -> U {
+    pub fn main_axis_sum(&self, direction: FlexDirection) -> U {
         if direction.is_row() {
             self.horizontal_axis_sum()
         } else {
@@ -233,7 +233,7 @@ where
     /// If the [`FlexDirection`] is [`FlexDirection::Row`] or [`FlexDirection::RowReverse`], this is [`Rect::vertical`].
     /// Otherwise, this is [`Rect::horizontal`].
     #[cfg(feature = "flexbox")]
-    pub(crate) fn cross_axis_sum(&self, direction: FlexDirection) -> U {
+    pub fn cross_axis_sum(&self, direction: FlexDirection) -> U {
         if direction.is_row() {
             self.vertical_axis_sum()
         } else {
@@ -248,7 +248,7 @@ where
 {
     /// The `start` or `top` value of the [`Rect`], from the perspective of the main layout axis
     #[cfg(feature = "flexbox")]
-    pub(crate) const fn main_start(&self, direction: FlexDirection) -> T {
+    pub const fn main_start(&self, direction: FlexDirection) -> T {
         if direction.is_row() {
             self.left
         } else {
@@ -258,7 +258,7 @@ where
 
     /// The `end` or `bottom` value of the [`Rect`], from the perspective of the main layout axis
     #[cfg(feature = "flexbox")]
-    pub(crate) const fn main_end(&self, direction: FlexDirection) -> T {
+    pub const fn main_end(&self, direction: FlexDirection) -> T {
         if direction.is_row() {
             self.right
         } else {
@@ -268,7 +268,7 @@ where
 
     /// The `start` or `top` value of the [`Rect`], from the perspective of the cross layout axis
     #[cfg(feature = "flexbox")]
-    pub(crate) const fn cross_start(&self, direction: FlexDirection) -> T {
+    pub const fn cross_start(&self, direction: FlexDirection) -> T {
         if direction.is_row() {
             self.top
         } else {
@@ -278,7 +278,7 @@ where
 
     /// The `end` or `bottom` value of the [`Rect`], from the perspective of the main layout axis
     #[cfg(feature = "flexbox")]
-    pub(crate) const fn cross_end(&self, direction: FlexDirection) -> T {
+    pub const fn cross_end(&self, direction: FlexDirection) -> T {
         if direction.is_row() {
             self.bottom
         } else {
@@ -406,7 +406,7 @@ impl<T> Size<T> {
     ///
     /// Whether this is the width or height depends on the `direction` provided
     #[cfg(feature = "flexbox")]
-    pub(crate) fn set_main(&mut self, direction: FlexDirection, value: T) {
+    pub fn set_main(&mut self, direction: FlexDirection, value: T) {
         if direction.is_row() {
             self.width = value
         } else {
@@ -418,7 +418,7 @@ impl<T> Size<T> {
     ///
     /// Whether this is the width or height depends on the `direction` provided
     #[cfg(feature = "flexbox")]
-    pub(crate) fn set_cross(&mut self, direction: FlexDirection, value: T) {
+    pub fn set_cross(&mut self, direction: FlexDirection, value: T) {
         if direction.is_row() {
             self.height = value
         } else {
@@ -430,7 +430,7 @@ impl<T> Size<T> {
     ///
     /// Whether this is the width or height depends on the `direction` provided
     #[cfg(feature = "flexbox")]
-    pub(crate) fn with_main(self, direction: FlexDirection, value: T) -> Self {
+    pub fn with_main(self, direction: FlexDirection, value: T) -> Self {
         let mut new = self;
         if direction.is_row() {
             new.width = value
@@ -444,7 +444,7 @@ impl<T> Size<T> {
     ///
     /// Whether this is the width or height depends on the `direction` provided
     #[cfg(feature = "flexbox")]
-    pub(crate) fn with_cross(self, direction: FlexDirection, value: T) -> Self {
+    pub fn with_cross(self, direction: FlexDirection, value: T) -> Self {
         let mut new = self;
         if direction.is_row() {
             new.height = value
@@ -458,7 +458,7 @@ impl<T> Size<T> {
     ///
     /// Whether this is the width or height depends on the `direction` provided
     #[cfg(feature = "flexbox")]
-    pub(crate) fn map_main(self, direction: FlexDirection, mapper: impl FnOnce(T) -> T) -> Self {
+    pub fn map_main(self, direction: FlexDirection, mapper: impl FnOnce(T) -> T) -> Self {
         let mut new = self;
         if direction.is_row() {
             new.width = mapper(new.width);
@@ -472,7 +472,7 @@ impl<T> Size<T> {
     ///
     /// Whether this is the width or height depends on the `direction` provided
     #[cfg(feature = "flexbox")]
-    pub(crate) fn map_cross(self, direction: FlexDirection, mapper: impl FnOnce(T) -> T) -> Self {
+    pub fn map_cross(self, direction: FlexDirection, mapper: impl FnOnce(T) -> T) -> Self {
         let mut new = self;
         if direction.is_row() {
             new.height = mapper(new.height);
@@ -486,7 +486,7 @@ impl<T> Size<T> {
     ///
     /// Whether this is the width or height depends on the `direction` provided
     #[cfg(feature = "flexbox")]
-    pub(crate) fn main(self, direction: FlexDirection) -> T {
+    pub fn main(self, direction: FlexDirection) -> T {
         if direction.is_row() {
             self.width
         } else {
@@ -498,7 +498,7 @@ impl<T> Size<T> {
     ///
     /// Whether this is the width or height depends on the `direction` provided
     #[cfg(feature = "flexbox")]
-    pub(crate) fn cross(self, direction: FlexDirection) -> T {
+    pub fn cross(self, direction: FlexDirection) -> T {
         if direction.is_row() {
             self.height
         } else {
@@ -509,7 +509,7 @@ impl<T> Size<T> {
     /// Gets the extent of the specified layout axis
     /// Whether this is the width or height depends on the `GridAxis` provided
     #[cfg(feature = "grid")]
-    pub(crate) fn get(self, axis: AbstractAxis) -> T {
+    pub fn get(self, axis: AbstractAxis) -> T {
         match axis {
             AbstractAxis::Inline => self.width,
             AbstractAxis::Block => self.height,
@@ -519,7 +519,7 @@ impl<T> Size<T> {
     /// Sets the extent of the specified layout axis
     /// Whether this is the width or height depends on the `GridAxis` provided
     #[cfg(feature = "grid")]
-    pub(crate) fn set(&mut self, axis: AbstractAxis, value: T) {
+    pub fn set(&mut self, axis: AbstractAxis, value: T) {
         match axis {
             AbstractAxis::Inline => self.width = value,
             AbstractAxis::Block => self.height = value,
@@ -692,7 +692,7 @@ impl<T> Point<T> {
     ///
     /// Whether this is the x or y depends on the `direction` provided
     #[cfg(feature = "flexbox")]
-    pub(crate) fn main(self, direction: FlexDirection) -> T {
+    pub fn main(self, direction: FlexDirection) -> T {
         if direction.is_row() {
             self.x
         } else {
@@ -704,7 +704,7 @@ impl<T> Point<T> {
     ///
     /// Whether this is the x or y depends on the `direction` provided
     #[cfg(feature = "flexbox")]
-    pub(crate) fn cross(self, direction: FlexDirection) -> T {
+    pub fn cross(self, direction: FlexDirection) -> T {
         if direction.is_row() {
             self.y
         } else {
